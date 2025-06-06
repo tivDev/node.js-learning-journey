@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES6",                           // Modern JavaScript features
+    "module": "commonjs",                      // Required by Node.js
+    "rootDir": ".",                            // Source files in current directory
+    "outDir": "dist",                          // Compiled JS goes to /dist
+    "strict": true,                            // Enable all strict type-checking
+    "esModuleInterop": true,                   // Allow default imports from CommonJS
+    "forceConsistentCasingInFileNames": true,  // Enforce consistent casing
+    "skipLibCheck": true                       // Skip type checking for node_modules
+  },
+  "include": ["index.ts"],                     // Include main file
+  "exclude": ["node_modules", "dist"]          // Ignore these folders
+}
