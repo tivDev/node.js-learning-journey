@@ -11,10 +11,6 @@ router.post('/register', authController.register);
 // Login route
 router.post('/login', authController.login);
 
-// Protected route (requires JWT)
-router.get('/protected', authMiddleware.verifyToken, (req, res) => {
-  res.json({ message: '✅ Access granted to protected route!', user: req.user });
-});
 
 // Get current user's profile (requires JWT)
 router.get('/me', authMiddleware.verifyToken, authController.getProfile);

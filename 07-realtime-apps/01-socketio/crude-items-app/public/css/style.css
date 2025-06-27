@@ -144,7 +144,7 @@ textarea {
 }
 
 #itemsList {
-    height: 65vh;
+    height:585px;
     overflow-y: scroll;
 }
 
@@ -152,7 +152,7 @@ textarea {
     display: none;
     justify-content: center;
     align-items: center;
-    min-height: 65vh;
+    min-height: 585px;;
     text-align: center;
     color: var(--color-secondary);
 }

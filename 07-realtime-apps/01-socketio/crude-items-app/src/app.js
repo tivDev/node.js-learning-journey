@@ -6,6 +6,7 @@ const sequelize = require('./config/database');
 const itemRoutes = require('./routes/itemRoutes');
 const socketController = require('./controllers/socketController');
 const { errorResponse } = require('./utils/responseHandler');
+const network = require('./utils/network');
 
 // Initialize Express app
 const app = express();
@@ -31,6 +32,7 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
@@ -46,7 +48,11 @@ sequelize.authenticate()
   .then(() => {
     const PORT = process.env.PORT || 3000;
     server.listen(PORT, () => {
-      console.log(`http://localhost:${PORT}`);
+      const localIP = network.getLocalIP();
+      console.log(`Server is running at:`);
+      console.log(`-> http://localhost:${PORT}`);
+      console.log(`-> http://${localIP}:${PORT} (accessible over local Wi-Fi)`);;
+
     });
   })
   .catch(err => {

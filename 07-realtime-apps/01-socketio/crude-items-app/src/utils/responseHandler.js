@@ -1,3 +1,4 @@
+// src/utils/responseHandler.js
 exports.successResponse = (res, statusCode, data, message = '') => {
   res.status(statusCode).json({
     success: true,
