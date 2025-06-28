@@ -21,18 +21,28 @@ class ItemManager {
         this.initialize();
     }
 
-    // Initialize app
     initialize() {
         this.fetchItems();
         this.addFormListener();
         this.setupSocketListeners();
-        // event close modal
+
         this.btnCancel.addEventListener('click', () => this.closeModal());
 
-        // event click to confirm delete or edit
         this.btnAgree.addEventListener('click', () => {
             if (this.currentAction === 'delete') this.confirmDelete();
             else if (this.currentAction === 'edit') this.confirmEdit();
+        });
+
+        this.itemsList.addEventListener('click', (e) => {
+            const itemEl = e.target.closest('.item');
+            if (!itemEl) return;
+
+            const id = itemEl.dataset.id;
+            if (e.target.classList.contains('btn-edit')) {
+                this.editItem(id);
+            } else if (e.target.classList.contains('btn-delete')) {
+                this.deleteItem(id);
+            }
         });
     }
 
@@ -63,25 +73,31 @@ class ItemManager {
         });
     }
 
-    confirmDelete() {
+    resetButtonLabels(itemEl) {
+        itemEl.querySelectorAll('button').forEach(btn => {
+            btn.textContent = btn.classList.contains('btn-edit') ? 'Edit' : 'Delete';
+        });
+    }
+
+    async confirmDelete() {
         const id = this.currentItemId;
         if (!id) return;
-
         const itemEl = document.querySelector(`.item[data-id="${id}"]`);
         if (!itemEl) return;
 
         this.setLoadingButtons(itemEl, true, 'Deleting...');
 
-        fetch(`/api/items/${id}`, { method: 'DELETE' })
-            .catch(err => {
-                alert('Failed to delete item.');
-                this.setLoadingButtons(itemEl, false);
-            });
-
-        this.closeModal();
+        try {
+            await fetch(`/api/items/${id}`, { method: 'DELETE' });
+        } catch {
+            alert('Failed to delete item.');
+            this.setLoadingButtons(itemEl, false);
+        } finally {
+            this.closeModal();
+        }
     }
 
-    confirmEdit() {
+    async confirmEdit() {
         const id = this.currentItemId;
         if (!id || !this.editForm) return;
 
@@ -96,26 +112,19 @@ class ItemManager {
 
         this.setLoadingButtons(itemEl, true, 'Updating...');
 
-        fetch(`/api/items/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, description })
-        })
-            .catch(err => {
-                alert('Failed to update item.');
-            })
-            .finally(() => {
-                this.setLoadingButtons(itemEl, false);
-                this.resetButtonLabels(itemEl);
+        try {
+            await fetch(`/api/items/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, description })
             });
-
-        this.closeModal();
-    }
-
-    resetButtonLabels(itemEl) {
-        itemEl.querySelectorAll('button').forEach(btn => {
-            btn.textContent = btn.classList.contains('btn-edit') ? 'Edit' : 'Delete';
-        });
+        } catch {
+            alert('Failed to update item.');
+        } finally {
+            this.setLoadingButtons(itemEl, false);
+            this.resetButtonLabels(itemEl);
+            this.closeModal();
+        }
     }
 
     createSkeletonLoader() {
@@ -173,29 +182,41 @@ class ItemManager {
         items.length === 0 ? this.showEmptyState() : this.hideEmptyState();
     }
 
-    fetchItems() {
+    async fetchItems() {
         this.showSkeletonLoader();
-        fetch('/api/items')
-            .then(res => res.json())
-            .then(data => {
-                this.hideSkeletonLoader();
-                document.querySelectorAll('.item:not(.skeleton-item)').forEach(el => el.remove());
+        try {
+            const res = await fetch('/api/items');
+            const data = await res.json();
 
-                if (data.success && data.data?.length > 0) {
-                    data.data.forEach(item => this.addItemToDOM(item));
-                    this.hideEmptyState();
-                } else {
-                    this.showEmptyState();
-                }
-            })
-            .catch(err => {
-                this.hideSkeletonLoader();
-                this.itemsList.innerHTML = `<div class="empty-state"><div class="empty-state-content"><p>Failed to load items. Please try again.</p></div></div>`;
-            });
+            this.hideSkeletonLoader();
+            document.querySelectorAll('.item:not(.skeleton-item)').forEach(el => el.remove());
+
+            if (data.success && data.data?.length > 0) {
+                const fragment = document.createDocumentFragment();
+                data.data.forEach(item => {
+                    fragment.appendChild(this.createItemElement(item));
+                });
+                this.itemsList.insertBefore(fragment, this.skeletonLoader);
+                this.hideEmptyState();
+            } else {
+                this.showEmptyState();
+            }
+        } catch {
+            this.hideSkeletonLoader();
+            this.itemsList.innerHTML = `<div class="empty-state"><div class="empty-state-content"><p>Failed to load items. Please try again.</p></div></div>`;
+        }
+    }
+
+    createItemElement(item) {
+        const itemEl = document.createElement('div');
+        itemEl.className = 'item';
+        itemEl.dataset.id = item.id;
+        itemEl.innerHTML = this.renderItemHTML(item);
+        return itemEl;
     }
 
     addFormListener() {
-        this.itemForm.addEventListener('submit', e => {
+        this.itemForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const title = document.getElementById('title').value.trim();
             const description = document.getElementById('description').value;
@@ -205,27 +226,23 @@ class ItemManager {
             submitBtn.textContent = 'Adding...';
             submitBtn.disabled = true;
 
-            fetch('/api/items', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, description })
-            })
-                .then(res => res.json())
-                .then(() => {
-                    this.itemForm.reset();
-                    this.hideEmptyState();
-                })
-                .catch(err => {
-                    alert('Failed to add item.');
-                })
-                .finally(() => {
-                    submitBtn.textContent = 'Add';
-                    submitBtn.disabled = false;
+            try {
+                await fetch('/api/items', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, description })
                 });
+                this.itemForm.reset();
+                this.hideEmptyState();
+            } catch {
+                alert('Failed to add item.');
+            } finally {
+                submitBtn.textContent = 'Add';
+                submitBtn.disabled = false;
+            }
         });
     }
 
-    // Socket listeners
     setupSocketListeners() {
         this.socket.on('item_created', item => {
             this.addItemToDOM(item);
@@ -245,21 +262,13 @@ class ItemManager {
             <p>${item.description || 'No description'}</p>
             <small>Created: ${new Date(item.created).toLocaleString()}</small>
             <small>Modified: ${new Date(item.modified).toLocaleString()}</small>
-            <button class="btn-edit" onclick="itemManager.editItem('${item.id}')">Edit</button>
-            <button class="btn-delete" onclick="itemManager.deleteItem('${item.id}')">Delete</button>`;
+            <button class="btn-edit">Edit</button>
+            <button class="btn-delete">Delete</button>`;
     }
 
     addItemToDOM(item) {
         if (document.querySelector(`.item[data-id="${item.id}"]`)) return;
-
-        const itemEl = document.createElement('div');
-        itemEl.className = 'item';
-        itemEl.dataset.id = item.id;
-        
-        // add html content to the element
-        itemEl.innerHTML = this.renderItemHTML(item);
-        
-        // Insert the item element into the DOM before the skeleton loader
+        const itemEl = this.createItemElement(item);
         this.itemsList.insertBefore(itemEl, this.skeletonLoader);
     }
 
@@ -290,12 +299,15 @@ class ItemManager {
                 <textarea id="editDescription" name="description">${currentDesc === 'No description' ? '' : currentDesc}</textarea>
             </div>
         `;
-        this.editForm = form;
+
         this.currentItemId = id;
         this.currentAction = 'edit';
-
         this.setModal({ title: 'Edit Item', contentHTML: form.outerHTML });
-        this.editForm = document.getElementById('editForm'); // Rebind after inserting into DOM
+
+        // Rebind after modal content inserted
+        setTimeout(() => {
+            this.editForm = document.getElementById('editForm');
+        }, 0);
     }
 
     deleteItem(id) {
@@ -308,7 +320,7 @@ class ItemManager {
     }
 }
 
-// Initialize
+// Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
     window.itemManager = new ItemManager();
 });
