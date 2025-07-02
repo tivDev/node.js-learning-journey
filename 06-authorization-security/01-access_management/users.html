@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Users Management</title>
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --text-color: #333;
+            --text-light: #666;
+            --border-color: #e0e0e0;
+            --bg-color: #f9f9f9;
+            --white: #ffffff;
+            --error-color: #e63946;
+            --hover-color: #f0f4ff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .card {
+            background-color: var(--white);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: var(--white);
+            text-align: left;
+            padding: 12px 16px;
+            font-weight: 500;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background-color: var(--hover-color);
+        }
+
+        .user-name {
+            font-weight: 500;
+        }
+
+        .user-email {
+            color: var(--text-light);
+            font-size: 14px;
+        }
+
+
+
+        .status-message {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-light);
+        }
+
+        .error-message {
+            color: var(--error-color);
+            font-weight: 500;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #3a56d4;
+        }
+
+
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            th, td {
+                padding: 10px 12px;
+            }
+
+            .user-id {
+                display: none;
+            }
+
+            .table th:nth-child(3),
+            .table td:nth-child(3) {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <p class="current-user">
+            <!-- Will be populated by JavaScript -->
+        </p>
+        <header class="header">
+            <h1>Users List</h1>
+            <button class="btn btn-logout" id="logoutBtn">Logout</button>
+        </header>
+
+        <div class="card">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="user-id">ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Created By</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userList">
+                        <tr>
+                            <td colspan="4" class="status-message">Loading users...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+ <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Constants
+        const API_URL = 'http://localhost:3000/api/users';
+        const AUTH_TOKEN_KEY = 'authToken';
+        const userList = document.getElementById('userList');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const currentUser = document.querySelector('.current-user');
+        const currentUserEmail = localStorage.getItem('currentUserEmail');
+
+        currentUser.innerHTML=`<strong>Current User</strong> : ${currentUserEmail}`;
+
+        // Check authentication
+        const authToken = localStorage.getItem(AUTH_TOKEN_KEY);
+        if (!authToken) {
+            window.location.href = '/';
+            return;
+        }
+
+
+        // Initialize WebSocket
+        const socket = io('http://localhost:3000', {
+            auth: { token: authToken },
+            reconnection: true
+        });
+
+        // Socket events
+        socket.on('connect', () => console.log('Socket connected to server'));
+
+        socket.on('user_created', (data) => {
+            console.log('User created event received:', data);
+            fetchUsers();
+        });
+
+        socket.on('connect_error', (err) => console.error('Socket connection error:', err));
+
+        // Fetch and display users
+        async function fetchUsers() {
+            try {
+                const response = await fetch(API_URL, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.status === 401) {
+                    handleUnauthorized();
+                    return;
+                }
+
+                const result = await response.json();
+                console.log('result: ', result);
+
+                if (!response.ok) {
+                    showError(result.message || 'Failed to fetch users');
+                    return;
+                }
+
+                
+                renderUsers(result.data || []);
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Network error. Please try again.');
+            }
+        }
+
+        // Render user rows in table
+        function renderUsers(users) {
+            if (users.length === 0) {
+                userList.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="status-message">No users found</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            userList.innerHTML = users.map(user => `
+                <tr data-user-id="${user.id}">
+                    <td class="user-id">
+                        <div class="user-id">${user.id}</div>
+                    </td>
+                    <td>
+                        <div class="user-name">${user.name || 'No name'}</div>
+                    </td>
+                    <td>
+                        <div class="user-email">${user.email}</div>
+                    </td>
+                    <td>
+                        <div class="user-created-by">${user.creator_name || 'Unknown'}</div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Show error message in table
+        function showError(message) {
+            userList.innerHTML = `
+                <tr>
+                    <td colspan="4" class="status-message error-message">${message}</td>
+                </tr>
+            `;
+        }
+
+        // Handle unauthorized access
+        function handleUnauthorized() {
+            localStorage.removeItem(AUTH_TOKEN_KEY);
+            window.location.href = '/';
+        }
+
+        // Logout
+        logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem(AUTH_TOKEN_KEY);
+            socket.disconnect();
+            window.location.href = '/';
+        });
+
+        // Initial fetch
+        await fetchUsers();
+    });
+</script>
+
+</body>
+</html>

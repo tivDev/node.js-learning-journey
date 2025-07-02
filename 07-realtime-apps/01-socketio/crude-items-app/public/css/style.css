@@ -1,0 +1,335 @@
+:root {
+    /* Font & Size */
+    --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-size-headline1: 28px;
+    --font-size-headline2: 22px;
+    --font-size-headline3: 20px;
+    --font-size-body: 17px;
+
+
+    /* Colors */
+    --color-bg: #f2f2f7;
+    --color-card: #ffffffcc;
+    --color-primary: #050505;
+    --color-secondary: #8e8e93;
+    --color-border: #d1d1d6;
+    --color-text: #1c1c1e;
+    --color-danger: #ff3b30;
+
+    /* Border & Radius */
+    --radius: 10px;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --transition: all 0.3s ease;
+    --backdrop-blur: blur(20px);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font: var(--font-size-body) var(--font-family);
+    -webkit-font-smoothing: antialiased;
+}
+
+body {
+    margin: 0;
+    padding: 20px;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    overflow: hidden;
+}
+
+.container {
+    max-width: 800px;
+    margin: auto;
+    background: var(--color-card);
+    padding: 20px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    backdrop-filter: var(--backdrop-blur);
+}
+
+h1 {
+    font-size: var(--font-size-headline1);
+    text-align: center;
+    color: var(--color-text);
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+#itemForm {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+input,
+textarea {
+    font-family: inherit;
+    font-size: var(--font-size-body);
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background-color: #fff;
+    transition: var(--transition);
+}
+
+#itemForm input:focus,
+#itemForm textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px #007aff33;
+}
+
+#itemForm button {
+    padding: 14px;
+    background-color: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+#itemForm button:hover {
+    background-color: var(--color-primary);
+}
+
+.item {
+    background: var(--color-card);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow);
+    backdrop-filter: var(--backdrop-blur);
+    transition: var(--transition);
+}
+
+.item h3 {
+    margin: 0 0 8px;
+    font-weight: 600;
+}
+
+.item small {
+    display: block;
+    color: var(--color-secondary);
+    font-size: 14px;
+}
+
+.item button {
+    margin-top: 10px;
+    padding: 5px 15px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    font-size: 15px;
+    color: var(--color-text);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.item .btn-edit {
+    color: var(--color-primary);
+}
+
+.item .btn-delete {
+    color: var(--color-danger);
+}
+
+.item button:hover {
+    background-color: #e5e5ea;
+}
+
+#itemsList {
+    height:585px;
+    overflow-y: scroll;
+}
+
+.empty-state {
+    display: none;
+    justify-content: center;
+    align-items: center;
+    min-height: 585px;;
+    text-align: center;
+    color: var(--color-secondary);
+}
+
+.empty-state-content {
+    padding: 20px;
+}
+
+.error {
+    color: var(--color-danger);
+    text-align: center;
+    padding: 20px;
+}
+
+/* Skeleton iOS shimmer */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: var(--radius);
+    margin-bottom: 10px;
+}
+
+.skeleton-title {
+    height: 24px;
+    width: 60%;
+    margin-bottom: 10px;
+}
+
+.skeleton-text {
+    height: 16px;
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.skeleton-small {
+    height: 12px;
+    width: 40%;
+    margin-bottom: 5px;
+}
+
+.skeleton-button {
+    height: 30px;
+    width: 70px;
+    display: inline-block;
+    margin-right: 10px;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+#itemsList.loading {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* modal popup style */
+/* Backdrop */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.modal-backdrop.show-backdrop {
+    opacity: 1;
+    visibility: visible;
+}
+
+
+/* Modal Box */
+.modal {
+    background: #fff;
+    border-radius: 20px 20px 0 0;
+    width: 100%;
+    max-width: 500px;
+    padding: 20px;
+    box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.15);
+    /* text-align: center; */
+    opacity: 0;
+    transform: translateY(100%);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.modal.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.modal h2 {
+    font-size: var(--font-size-headline2);
+    margin-bottom: 10px;
+}
+
+.modal p {
+    font-size: 15px;
+    color: #555;
+    margin-bottom: 20px;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 10px;
+}
+
+.modal-footer button {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.btn-cancel {
+    background: #eee;
+}
+
+.btn-cancel:hover {
+    background: #ddd;
+}
+
+.btn-agree {
+    background: #007aff;
+    color: white;
+}
+
+.btn-agree:hover {
+    background: #005fcf;
+}
+
+/* form of modal */
+.modal-content form {
+    padding: 20px 0px;
+}
+
+.modal-content .form-group {
+    margin-bottom: 15px;
+}
+
+.modal-content label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.modal-content input[type="text"],
+.modal-content textarea {
+    width: 100%;
+}
+
+
+@media (min-width: 600px) {
+    .modal-backdrop {
+        align-items: center;
+    }
+
+    .modal {
+        border-radius: 20px;
+        transform: scale(0.9);
+        transition: transform 0.3s ease;
+    }
+
+    .modal.show {
+        transform: scale(1);
+    }
+}

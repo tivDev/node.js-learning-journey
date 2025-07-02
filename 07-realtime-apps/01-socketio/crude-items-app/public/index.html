@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Items</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Real-time Data of Items</h1>
+        <form id="itemForm">
+            <input type="text" id="title" placeholder="Title (required)" required>
+            <textarea id="description" placeholder="Description"></textarea>
+            <button type="submit">Add Item</button>
+        </form>
+
+        <div id="itemsList">
+            <!-- Items will be dynamically added here -->
+            <div id="skeletonLoader" class="loading-state">
+                <!-- Skeleton items will be added here by JavaScript -->
+            </div>
+        </div>
+
+    </div>
+    <!-- Modal Structure -->
+    <div class="modal-backdrop" id="modalBackdrop">
+        <div class="modal" id="modalBox">
+            <div class="modal-header">
+                <h2 class="modal-title">Message</h2>
+            </div>
+            <div class="modal-content">
+                <p class="modal-message">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel">Cancel</button>
+                <button class="btn-agree">Yes</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/client.js"></script>
+</body>
+
+</html>
